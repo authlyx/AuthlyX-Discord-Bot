@@ -13,7 +13,7 @@ module.exports = {
       .addStringOption(o => o.setName("username").setDescription("Username").setRequired(true))
       .addStringOption(o => o.setName("password").setDescription("Password").setRequired(true))
       .addStringOption(o => o.setName("subscription").setDescription("Subscription name").setRequired(true).setAutocomplete(true))
-      .addIntegerOption(o => o.setName("days").setDescription("Expiry in days").setRequired(true))
+      .addIntegerOption(o => o.setName("days").setDescription("Expiry in days (0 = lifetime)").setRequired(true).setMinValue(0))
       .addStringOption(o => o.setName("email").setDescription("Email (optional)"))
       .addIntegerOption(o => o.setName("device_limit").setDescription("Max devices (default 1)")))
     .addSubcommand(s => s.setName("view").setDescription("View a user")

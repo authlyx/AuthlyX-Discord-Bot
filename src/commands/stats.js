@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, AttachmentBuilder } = require("discord.js");
 const { prepareContext } = require("../utils/context");
 const { eliteRequest } = require("../utils/api");
-const { error, info, field } = require("../utils/embeds");
+const { error, info, field, AUTHLYX_LOGO_URL } = require("../utils/embeds");
 const { fetch } = require("undici");
 
 function buildChartUrl(series) {
@@ -72,7 +72,7 @@ module.exports = {
         return "-";
       };
 
-      const embed = info(`📊 ${ctx.appName}`, [
+      const embed = info(ctx.appName, [
         field("Users",         get("total_users"),         true),
         field("Licenses",      get("total_licenses"),      true),
         field("Devices",       get("total_devices"),       true),
@@ -87,7 +87,7 @@ module.exports = {
 
       if (hasUsage) {
         embed.setImage("attachment://usage.png");
-        embed.setFooter({ text: "SDK calls - last 7 days" });
+        embed.setFooter({ text: "AuthlyX • SDK calls - last 7 days", iconURL: AUTHLYX_LOGO_URL });
 
         const chartUrl = buildChartUrl(series);
         const imgRes = await fetch(chartUrl);

@@ -33,7 +33,7 @@ module.exports = {
         }
         const lines = vars.map(v =>
           `**${v.key}** = \`${v.value ?? "-"}\` ${v.writable === false ? "🔒" : ""}`
-        ).join("\n");
+        ).join("\n").slice(0, 4000);
         await interaction.editReply({ embeds: [info(`Variables (${vars.length})`, [], lines)] });
 
       } else if (sub === "view") {

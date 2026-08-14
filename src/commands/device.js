@@ -1,11 +1,10 @@
 const { SlashCommandBuilder } = require("discord.js");
 const { prepareContext } = require("../utils/context");
-const { resolveEphemeral } = require("../utils/db");
+const { resolveEphemeral, resolveApp } = require("../utils/db");
 const { eliteRequest } = require("../utils/api");
 const { success, error, info, field } = require("../utils/embeds");
 const { formatExpiry } = require("../utils/parseExpiry");
 
-// options shared by all subcommands that target a single device
 function addDeviceOptions(s) {
   return s
     .addStringOption(o => o.setName("device_type").setDescription("Device ID type").setRequired(true)
@@ -21,7 +20,7 @@ module.exports = {
     .setName("device")
     .setDescription("Manage devices")
     .addSubcommand(s => s.setName("list").setDescription("List devices in the current app")
-      .addStringOption(o => o.setName("subscription").setDescription("Filter by subscription name (optional)")))
+      .addStringOption(o => o.setName("subscription").setDescription("Filter by subscription name (optional)").setAutocomplete(true)))
     .addSubcommand(s => addDeviceOptions(s.setName("view").setDescription("View a specific device")))
     .addSubcommand(s => addDeviceOptions(s.setName("delete").setDescription("Remove a device")))
     .addSubcommand(s => addDeviceOptions(s.setName("reset").setDescription("Reset HWID and IP for a specific device")))
@@ -38,6 +37,30 @@ module.exports = {
         .addIntegerOption(o => o.setName("days").setDescription("Days to remove").setRequired(true))
     )),
 
+  async autocomplete(interaction) {
+    const focused = interaction.options.getFocused().toLowerCase();
+    try {
+      const app = resolveApp(interaction.guildId, interaction.user.id);
+      if (!app) return interaction.respond([]);
+      const data = await eliteRequest("subscription", "list", app, {});
+      const subs = Array.isArray(data.subscriptions) ? data.subscriptions : Array.isArray(data) ? data : [];
+      const choices = subs
+        .filter(s => {
+          const name = typeof s === "string" ? s : s.name || "";
+          return name.toLowerCase().includes(focused);
+        })
+        .slice(0, 25)
+        .map(s => {
+          const name = typeof s === "string" ? s : s.name || "";
+          return { name, value: name };
+        });
+      await interaction.respond(choices);
+    } catch (e) {
+      console.error("[autocomplete:device subscription]", e.message);
+      await interaction.respond([]);
+    }
+  },
+
   async execute(interaction) {
     const ephemeral = resolveEphemeral(interaction.guildId);
     await interaction.deferReply({ ephemeral });
@@ -48,7 +71,6 @@ module.exports = {
     const deviceType = interaction.options.getString("device_type");
     const deviceId   = interaction.options.getString("device_id");
 
-    // params for single-device actions
     const deviceParams = deviceType && deviceId
       ? { device_type: deviceType, device_id: deviceId }
       : {};

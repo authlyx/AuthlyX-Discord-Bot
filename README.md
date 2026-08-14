@@ -37,7 +37,7 @@ EPHEMERAL=true
 | `DISCORD_TOKEN` | Your bot's token from the Discord developer portal |
 | `DISCORD_CLIENT_ID` | Your bot's application/client ID |
 | `AUTHLYX_ELITE_KEY` | Elite Key from your AuthlyX dashboard |
-| `AUTHLYX_API_BASE` | AuthlyX API base URL - do not change unless self-hosting the panel |
+| `AUTHLYX_API_BASE` | AuthlyX API base URL - do not change this unless you are self hosting the bot |
 | `ALLOWED_ROLE` | Role name or ID that can use bot commands (e.g. `Admin`, `Staff`, or a role ID). Leave blank to allow everyone. |
 | `EPHEMERAL` | `true` = replies only visible to the user who ran the command. `false` = replies visible to the whole channel. Can also be changed per-server with `/config ephemeral`. |
 
@@ -60,7 +60,7 @@ npm start
 | Subcommand | Description |
 |---|---|
 | `/app select` | Shows all your AuthlyX apps as buttons. Click one to set it as your active app. |
-| `/app current` | Show which app is currently selected for your user. |
+| `/app current` | Show which app is currently selected. |
 
 Each Discord user's app selection is saved separately, so multiple people can work with different apps in the same server.
 
@@ -70,7 +70,7 @@ Each Discord user's app selection is saved separately, so multiple people can wo
 
 | Subcommand | Options | Description |
 |---|---|---|
-| `/user add` | `username` `password` `subscription` `days` `email` `device_limit` | Create a new user. Subscription options are autocompleted. Credentials are sent to your DMs. |
+| `/user add` | `username` `password` `subscription` `days` `email` `device_limit` | Create a new user. Subscription options are autocompleted. Credentials are sent to your DMs. `days` = 0 creates set a lifetime expiry date. |
 | `/user view` | `username` | View a user's details, status, IP address, expiry, subscription, and linked license. |
 | `/user delete` | `username` | Permanently delete a user. |
 | `/user ban` | `username` | Ban a user from authenticating. |
@@ -80,7 +80,7 @@ Each Discord user's app selection is saved separately, so multiple people can wo
 | `/user extend` | `username` `days` | Add days to a user's expiry. |
 | `/user shorten` | `username` `days` | Remove days from a user's expiry. |
 | `/user change-password` | `username` `new_password` | Set a new password for a user. |
-| `/user reset` | `username` | Reset HWID and IP address for a user, allowing them to re-authenticate from any device. |
+| `/user reset` | `username` | Reset SID and IP address for a user, allowing them to re-authenticate from any device. |
 | `/user verify-password` | `username` `password` | Check if a username and password combination is valid. |
 
 ---
@@ -89,8 +89,8 @@ Each Discord user's app selection is saved separately, so multiple people can wo
 
 | Subcommand | Options | Description |
 |---|---|---|
-| `/license add` | `key` `subscription` `days` `device_limit` `note` | Add a license with a specific key you provide. |
-| `/license generate` | `subscription` `days` `amount` `device_limit` `random_chars` `note` | Generate one or more random license keys (up to 50 at a time). Keys are sent to your DMs. |
+| `/license add` | `key` `subscription` `days` `device_limit` `note` | Add a license with a specific key you provide. `days` = 0 creates a lifetime license. |
+| `/license generate` | `subscription` `days` `amount` `device_limit` `random_chars` `note` | Generate one or more random license keys (1-50 at a time). `days` = 0 for lifetime licenses. Keys are delivered as a `licenses.txt` file attachment in your DMs, not raw text - also safe even at the max batch size. |
 | `/license view` | `key` | View a license's details, subscription, expiry, device usage, IP address, and status. |
 | `/license delete` | `key` | Permanently delete a license. |
 | `/license ban` | `key` | Ban a license key from being used. |
@@ -100,7 +100,7 @@ Each Discord user's app selection is saved separately, so multiple people can wo
 | `/license extend` | `key` `days` | Add days to a license's expiry. |
 | `/license shorten` | `key` `days` | Remove days from a license's expiry. |
 | `/license edit` | `key` `note` `device_limit` `subscription` | Edit a license's note, device limit, or subscription. Provide at least one field. |
-| `/license reset` | `key` | Reset HWID and IP address for a license, allowing the holder to re-authenticate from any device. |
+| `/license reset` | `key` | Reset SID and IP address for a license, allowing the holder to re-authenticate from any device. |
 
 ---
 
@@ -110,10 +110,10 @@ Devices are identified by their type and ID value, not by username or license ke
 
 | Subcommand | Options | Description |
 |---|---|---|
-| `/device list` | `subscription` | List all devices in the current app. Optionally filter by subscription name. |
+| `/device list` | `subscription` | List all devices in the current app. Optionally filter by subscription name (autocompleted). |
 | `/device view` | `device_type` `device_id` | View details for a specific device. |
 | `/device delete` | `device_type` `device_id` | Remove a specific device. |
-| `/device reset` | `device_type` `device_id` | Reset HWID and IP for a specific device. |
+| `/device reset` | `device_type` `device_id` | Reset SID and IP for a specific device. |
 | `/device ban` | `device_type` `device_id` | Ban a device from authenticating. |
 | `/device unban` | `device_type` `device_id` | Remove a ban from a device. |
 | `/device pause` | `device_type` `device_id` | Temporarily disable a device. |
@@ -148,7 +148,7 @@ Show a quick summary of the selected app - total users, licenses, devices, subsc
 
 | Subcommand | Options | Description |
 |---|---|---|
-| `/config ephemeral` | `true` / `false` | Toggle whether bot replies are private (only visible to the person who ran the command) or public. Takes effect immediately - no restart needed. |
+| `/config ephemeral` | `true` / `false` | Toggle whether bot replies are private (only visible to the person who ran the command) or public. |
 | `/config status` | - | Show the current bot configuration for this server. |
 
 ---
@@ -167,11 +167,26 @@ Bot configuration and per-user app selections are stored locally in `data/bot.js
 
 ## Notes
 
-- **DM delivery** - generated license keys and new user credentials are sent to the DMs of whoever ran the command, not posted in the channel. Make sure you have DMs enabled from server members.
+- **DM delivery** - generated license keys and new user credentials are sent to the DMs of whoever ran the command, not posted in the channel. Make sure you have DMs enabled from server members. If a DM fails to send (e.g. DMs disabled), the bot's reply in-channel will say so instead of silently claiming success.
 - **Autocomplete** - app names and subscription names are fetched live from your AuthlyX account as you type. If something was just created and is not showing yet, type the name manually - it still works.
 - **App selection** - each user's selected app is stored individually. Use `/app select` to switch apps.
 - **Re-deploying commands** - run `npm run deploy` any time you update the bot code to re-register slash command definitions with Discord.
 - **Ephemeral replies** - the default is controlled by the `EPHEMERAL` variable in `.env`. Server admins can override this at any time with `/config ephemeral` without restarting the bot.
+- **Lifetime expiries** - anywhere you're asked for `days` on a create action (`/user add`, `/license add`, `/license generate`), entering `0` creates a license/user that never expires. Negative values are rejected.
+
+---
+
+
+## Troubleshooting
+
+| Symptom | Likely cause |
+|---|---|
+| Slash commands don't show up in Discord | Run `npm run deploy` again - commands are only registered with Discord when you do this, not automatically on `npm start`. Can take up to an hour to propagate globally the first time. |
+| "No app selected. Use `/app select` first." | Every command except `/app select`/`/app current` needs an app selected first, per Discord user, per server. |
+| "You need the **X** role to use this command." | Your `ALLOWED_ROLE` in `.env` doesn't match any role the user has (checked by name or ID) and they aren't an Administrator. |
+| Bot never responds / commands time out | Check `DISCORD_TOKEN` is correct and the bot process is actually running (`npm start`). Check the console for errors. |
+| "Invalid elite key" | `AUTHLYX_ELITE_KEY` is wrong, expired, or was reset from the dashboard - generate a fresh one and update `.env`. |
+| Generated keys / new user credentials never arrive | The recipient has server DMs disabled. The bot's reply will say so - ask them to enable DMs from server members, or re-run the command after they do. |
 
 ---
 

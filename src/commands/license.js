@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require("discord.js");
+const { SlashCommandBuilder, AttachmentBuilder } = require("discord.js");
 const { prepareContext } = require("../utils/context");
 const { eliteRequest } = require("../utils/api");
 const { success, error, info, field } = require("../utils/embeds");
@@ -12,13 +12,13 @@ module.exports = {
     .addSubcommand(s => s.setName("add").setDescription("Add a license with a custom key")
       .addStringOption(o => o.setName("key").setDescription("License key to add").setRequired(true))
       .addStringOption(o => o.setName("subscription").setDescription("Subscription name").setRequired(true).setAutocomplete(true))
-      .addIntegerOption(o => o.setName("days").setDescription("Expiry in days").setRequired(true))
+      .addIntegerOption(o => o.setName("days").setDescription("Expiry in days (0 = lifetime)").setRequired(true).setMinValue(0))
       .addIntegerOption(o => o.setName("device_limit").setDescription("Max devices (default 1)"))
       .addStringOption(o => o.setName("note").setDescription("Optional note")))
     .addSubcommand(s => s.setName("generate").setDescription("Generate one or more random licenses")
       .addStringOption(o => o.setName("subscription").setDescription("Subscription name").setRequired(true).setAutocomplete(true))
-      .addIntegerOption(o => o.setName("days").setDescription("Expiry in days").setRequired(true))
-      .addIntegerOption(o => o.setName("amount").setDescription("How many to generate (default 1, max 50)"))
+      .addIntegerOption(o => o.setName("days").setDescription("Expiry in days (0 = lifetime)").setRequired(true).setMinValue(0))
+      .addIntegerOption(o => o.setName("amount").setDescription("How many to generate (default 1, max 50)").setMinValue(1).setMaxValue(50))
       .addIntegerOption(o => o.setName("device_limit").setDescription("Max devices per license (default 1)"))
       .addBooleanOption(o => o.setName("random_chars").setDescription("Add random chars to keys (default true)"))
       .addStringOption(o => o.setName("note").setDescription("Optional note attached to each license")))
@@ -128,22 +128,30 @@ module.exports = {
         const keys = Array.isArray(data.keys) ? data.keys : [];
         const keyList = keys.join("\n") || "-";
 
+        // Sent as a file, not an embed field - a joined key list can easily
+        // exceed Discord's 1024-char field limit once amount/segments/prefix
+        // are large, which would otherwise silently fail to DM.
+        let dmSent = true;
         try {
           await interaction.user.send({
             embeds: [info(`${keys.length} License(s) Generated`, [
               field("App", ctx.appName, true),
               field("Subscription", subscription, true),
               field("Expires", formatExpiry(expiryDate), true),
-              field("Keys", `\`\`\`\n${keyList}\n\`\`\``),
             ])],
+            files: [new AttachmentBuilder(Buffer.from(keyList, "utf8"), { name: "licenses.txt" })],
           });
-        } catch {}
+        } catch {
+          dmSent = false;
+        }
 
         await interaction.editReply({ embeds: [success(`${keys.length} license(s) generated`, [
           field("Subscription", subscription, true),
           field("Amount", String(keys.length), true),
           field("Expires", formatExpiry(expiryDate), true),
-        ], "Keys sent to your DMs.")] });
+        ], dmSent
+          ? "Keys sent to your DMs."
+          : "⚠️ Could not DM you the keys (DMs may be disabled). Ask an admin to check the bot's message, or re-run with DMs enabled.")] });
 
       } else if (sub === "view") {
         const data = await eliteRequest("license", "info", ctx.appName, lk);
