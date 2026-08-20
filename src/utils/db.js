@@ -7,8 +7,12 @@ const DB_PATH = join(DATA_DIR, "bot.json");
 mkdirSync(DATA_DIR, { recursive: true });
 
 function load() {
-  if (!existsSync(DB_PATH)) return { guild_config: {}, app_selections: {} };
-  try { return JSON.parse(readFileSync(DB_PATH, "utf8")); } catch { return { guild_config: {}, app_selections: {} }; }
+  if (!existsSync(DB_PATH)) return { guild_config: {}, app_selections: {}, allowed_users: {} };
+  try {
+    const data = JSON.parse(readFileSync(DB_PATH, "utf8"));
+    if (!data.allowed_users) data.allowed_users = {};
+    return data;
+  } catch { return { guild_config: {}, app_selections: {}, allowed_users: {} }; }
 }
 
 function save(data) {
@@ -41,4 +45,30 @@ function resolveApp(guildId, userId) {
   return getAppSelection(guildId, userId);
 }
 
-module.exports = { setEphemeral, resolveEphemeral, getAppSelection, setAppSelection, resolveApp };
+function addAllowedUser(guildId, userId, tag) {
+  const data = load();
+  const list = data.allowed_users[guildId] || [];
+  if (!list.some(u => u.id === userId)) list.push({ id: userId, tag, added_at: Date.now() });
+  data.allowed_users[guildId] = list;
+  save(data);
+}
+
+function removeAllowedUser(guildId, userId) {
+  const data = load();
+  const list = data.allowed_users[guildId] || [];
+  data.allowed_users[guildId] = list.filter(u => u.id !== userId);
+  save(data);
+}
+
+function listAllowedUsers(guildId) {
+  return load().allowed_users[guildId] || [];
+}
+
+function isUserAllowed(guildId, userId) {
+  return listAllowedUsers(guildId).some(u => u.id === userId);
+}
+
+module.exports = {
+  setEphemeral, resolveEphemeral, getAppSelection, setAppSelection, resolveApp,
+  addAllowedUser, removeAllowedUser, listAllowedUsers, isUserAllowed,
+};

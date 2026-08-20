@@ -1,11 +1,9 @@
 const { EmbedBuilder } = require("discord.js");
 
-// Matches the AuthlyX dashboard palette (src/pages/app/Index.tsx and friends),
-// not Discord's stock colors - keep this in sync if the site palette changes.
-const BLUE = 0x3aaaff;   // primary accent
-const GREEN = 0x4ade80;  // success
-const RED = 0xf43f5e;    // danger
-const YELLOW = 0xfbbf24; // warning
+const BLUE = 0x3aaaff;
+const GREEN = 0x4ade80;
+const RED = 0xf43f5e;
+const YELLOW = 0xfbbf24;
 
 const AUTHLYX_LOGO_URL = "https://cdn.authly.cc/logos/authlynobg.png";
 

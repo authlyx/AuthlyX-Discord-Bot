@@ -5,8 +5,16 @@ const { resolveEphemeral } = require("../utils/db");
 const COMMANDS = `
 **Config**
 \`/config ephemeral\` - Toggle ephemeral (private) replies
+\`/config allow-user\` - Grant a user access (whitelist access mode only)
+\`/config disallow-user\` - Revoke a user's access
+\`/config list-users\` - List whitelisted users
+\`/config status\` - Show current bot configuration
 \`/app select\` - Choose the active app
 \`/app current\` - Show currently selected app
+
+**App Management**
+\`/app enable\` / \`disable\` - Enable or disable the selected app
+\`/app user-panel\` - Toggle the selected app's user panel
 
 **Users**
 \`/user add\` - Create a new user
@@ -23,7 +31,7 @@ const COMMANDS = `
 \`/license add\` - Add a license with a custom key
 \`/license generate\` - Generate random licenses (supports bulk)
 \`/license view\` - View license details
-\`/license edit\` - Edit note / device limit / subscription
+\`/license edit\` - Edit note, device limit, or subscription
 \`/license delete\` - Delete a license
 \`/license ban\` / \`unban\` - Ban or unban
 \`/license pause\` / \`unpause\` - Pause or unpause
@@ -45,8 +53,22 @@ const COMMANDS = `
 \`/variable set\` - Set or update a variable
 \`/variable delete\` - Delete a variable
 
-**Stats**
-\`/stats\` -Show app stats and usage chart
+**Staff**
+\`/staff add\` - Add a staff member (new account or existing, with a role)
+\`/staff edit\` - Change a staff member's role
+\`/staff ban\` / \`unban\` - Ban or unban a staff member
+\`/staff list\` - List staff members
+
+**Resellers**
+\`/reseller add\` - Add a reseller (new account or existing, with a rate plan)
+\`/reseller edit\` - Change a reseller's rate plan
+\`/reseller ban\` / \`unban\` - Ban or unban a reseller
+\`/reseller add-coins\` / \`remove-coins\` - Adjust a reseller's coin balance
+\`/reseller list\` - List resellers
+
+**Other**
+\`/stats\` - Show app stats and usage chart
+\`/ping\` - Check the bot's connection and API response time
 `.trim();
 
 module.exports = {

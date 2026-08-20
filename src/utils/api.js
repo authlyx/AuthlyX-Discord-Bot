@@ -1,13 +1,19 @@
-const { fetch } = require("undici");
+const { fetch, Agent, setGlobalDispatcher } = require("undici");
 require("dotenv").config();
 
 const BASE = (process.env.AUTHLYX_API_BASE || "https://authly.cc").replace(/\/+$/, "");
 const KEY = process.env.AUTHLYX_ELITE_KEY;
 
+setGlobalDispatcher(new Agent({
+  keepAliveTimeout: 30_000,
+  keepAliveMaxTimeout: 60_000,
+  connections: 10,
+}));
+
 const SENSITIVE_ACTIONS = new Set([
   "add", "generate", "create", "edit", "delete", "ban", "unban",
   "pause", "unpause", "extend", "shorten", "reset_password", "set", "reset",
-  "verify_password",
+  "verify_password", "coins",
 ]);
 
 async function eliteRequest(fn, action, appName, params = {}) {
@@ -46,4 +52,13 @@ async function eliteRequest(fn, action, appName, params = {}) {
   return data;
 }
 
-module.exports = { eliteRequest };
+async function pingApi() {
+  if (!KEY) throw new Error("AUTHLYX_ELITE_KEY is not set in .env");
+  const res = await fetch(`${BASE}/api/elite-key/ping`, {
+    headers: { "x-elite-key": KEY },
+  });
+  if (!res.ok) throw new Error(`API returned ${res.status}`);
+  return res.json();
+}
+
+module.exports = { eliteRequest, pingApi };

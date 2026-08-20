@@ -128,9 +128,6 @@ module.exports = {
         const keys = Array.isArray(data.keys) ? data.keys : [];
         const keyList = keys.join("\n") || "-";
 
-        // Sent as a file, not an embed field - a joined key list can easily
-        // exceed Discord's 1024-char field limit once amount/segments/prefix
-        // are large, which would otherwise silently fail to DM.
         let dmSent = true;
         try {
           await interaction.user.send({
